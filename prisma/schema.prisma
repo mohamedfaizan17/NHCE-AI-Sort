@@ -1,0 +1,64 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String        @id @default(uuid())
+  firebaseUid   String        @unique
+  email         String        @unique
+  displayName   String?
+  photoURL      String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  profile       Profile?
+  chatHistory   ChatMessage[]
+}
+
+model Profile {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  xp            Int      @default(0)
+  level         Int      @default(1)
+  streak        Int      @default(0)
+  lastActive    DateTime @default(now())
+  badges        String   @default("[]") // JSON string array
+  mastery       String   @default("{}") // JSON string object
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model ChatMessage {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  algorithm     String
+  role          String   // "user" | "ai" | "system"
+  content       String
+  metadata      String?  @default("{}") // JSON string for additional data
+  timestamp     DateTime @default(now())
+
+  @@index([userId, algorithm])
+  @@index([timestamp])
+}
+
+model Leaderboard {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  displayName   String
+  photoURL      String?
+  totalXP       Int      @default(0)
+  level         Int      @default(1)
+  rank          Int?
+  updatedAt     DateTime @updatedAt
+
+  @@index([totalXP(sort: Desc)])
+}

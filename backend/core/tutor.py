@@ -5,25 +5,24 @@ LangChain-powered Socratic Tutor
 import json
 import os
 from typing import Dict, List, Any
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.schema import SystemMessage, HumanMessage, AIMessage
+from langchain_groq import ChatGroq
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from .prompts import get_socratic_prompt
 
 
 class SocraticTutor:
     def __init__(self):
-        api_key = os.getenv("GOOGLE_AI_API_KEY")
+        api_key = os.getenv("GROQ_API_KEY")
         # Allow running without external API for local dev/testing
         if not api_key:
             self.llm = None
             self.use_mock = True
         else:
             self.use_mock = False
-            self.llm = ChatGoogleGenerativeAI(
-                model="gemini-2.0-flash-exp",
-                google_api_key=api_key,
+            self.llm = ChatGroq(
+                model="llama-3.3-70b-versatile",
+                groq_api_key=api_key,
                 temperature=0.7,
-                convert_system_message_to_human=True,
             )
     
     def generate_response(
@@ -31,6 +30,7 @@ class SocraticTutor:
         algorithm: str,
         chat_history: List[Dict[str, str]],
         learner_mastery: Dict[str, float],
+        current_array: List[int] = None,
     ) -> Dict[str, Any]:
         """
         Generate a Socratic response using LangChain and Gemini.
@@ -43,6 +43,13 @@ class SocraticTutor:
         Returns:
             Dictionary containing the AI's structured response
         """
+        print(f"\n=== GENERATE RESPONSE CALLED ===")
+        print(f"Algorithm: {algorithm}")
+        print(f"Chat history: {chat_history}")
+        print(f"Current array: {current_array}")
+        print(f"Use mock: {getattr(self, 'use_mock', False)}")
+        print(f"LLM exists: {self.llm is not None}")
+        
         # Get current mastery for this algorithm
         current_mastery = learner_mastery.get(algorithm, 0.0)
         
@@ -52,17 +59,21 @@ class SocraticTutor:
             for msg in chat_history[-10:]  # Last 10 messages
         ])
         
+        # Add array data to context if provided
+        if current_array:
+            history_str += f"\n\nCURRENT ARRAY BEING SORTED: {current_array}"
+        
         # Create system prompt
         system_prompt = get_socratic_prompt(algorithm, current_mastery, history_str)
         
         # Build message chain
         messages = [SystemMessage(content=system_prompt)]
         
-        # Add chat history
-        for msg in chat_history[-5:]:  # Last 5 for context window
+        # Add chat history - include AI responses too
+        for msg in chat_history[-10:]:  # Last 10 for better context
             if msg["role"] == "user":
                 messages.append(HumanMessage(content=msg["content"]))
-            elif msg["role"] == "ai":
+            elif msg["role"] == "ai" or msg["role"] == "assistant":
                 messages.append(AIMessage(content=msg["content"]))
         
         # Add instruction for JSON response
@@ -80,7 +91,7 @@ class SocraticTutor:
                 "analysisOfUserAnswer": "continuing",
                 "learnerMasteryUpdate": {algorithm: next_mastery},
                 "visualizerStateUpdate": {"focusIndices": [0, 1], "state": "comparing"},
-                "xpAwarded": 3,
+                "xpAwarded": 5,
             }
 
         try:
@@ -136,6 +147,9 @@ class SocraticTutor:
         
         except Exception as e:
             print(f"Error generating response: {e}")
+            print(f"Error type: {type(e)}")
+            import traceback
+            traceback.print_exc()
             # Fallback response
             return {
                 "socraticQuestion": "Let's continue exploring. What aspect would you like to understand better?",

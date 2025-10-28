@@ -70,22 +70,24 @@ export function ChatPanel() {
     }
     setMessages((prev) => [...prev, userMessage])
 
-    // Send to AI
-    await sendMessage(content)
-
-    // Note: The AI response will be added via the chat history API
-    // For now, we'll simulate it
-    // In production, you'd fetch the latest message from the database
-    setTimeout(() => {
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'ai',
-        content:
-          "Great observation! Let me guide you further with another question...",
-        timestamp: new Date(),
+    // Send to AI and get response
+    try {
+      const response = await sendMessage(content)
+      
+      // Add AI response to messages
+      if (response) {
+        const aiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'ai',
+          content: response.socraticQuestion,
+          timestamp: new Date(),
+        }
+        setMessages((prev) => [...prev, aiMessage])
       }
-      setMessages((prev) => [...prev, aiMessage])
-    }, 1000)
+    } catch (error) {
+      console.error('Error sending message:', error)
+      toast.error('Failed to get AI response')
+    }
   }
 
   const handleRequestHint = () => {

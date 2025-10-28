@@ -16,7 +16,17 @@ export default function Home() {
   const [isSigningIn, setIsSigningIn] = useState(false)
   const { user, setUser, fetchProfile } = useLearnerStore()
 
+  // DEVELOPMENT MODE: Bypass Firebase auth for testing
+  const DEV_MODE = process.env.NODE_ENV === 'development'
+
   useEffect(() => {
+    if (DEV_MODE) {
+      // Skip Firebase auth in development mode
+      console.log('DEV MODE: Skipping Firebase authentication')
+      setIsAuthLoading(false)
+      return
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         // User is signed in
@@ -39,7 +49,7 @@ export default function Home() {
     })
 
     return () => unsubscribe()
-  }, [setUser, fetchProfile])
+  }, [setUser, fetchProfile, DEV_MODE])
 
   const handleGoogleSignIn = async () => {
     setIsSigningIn(true)
@@ -72,6 +82,24 @@ export default function Home() {
         </div>
       </div>
     )
+  }
+
+  // Development mode bypass
+  const handleDevModeSkip = () => {
+    console.log('Dev Mode: Bypassing authentication')
+    const devUser = {
+      id: 'dev-user',
+      firebaseUid: 'dev-test-uid',
+      email: 'dev@test.com',
+      displayName: 'Dev User',
+      photoURL: null,
+      createdAt: new Date(),
+    }
+    setUser(devUser)
+    console.log('Dev Mode: User set:', devUser)
+    toast.success('Dev Mode', {
+      description: 'Logged in as test user',
+    })
   }
 
   // Not authenticated - show landing page
@@ -162,6 +190,17 @@ export default function Home() {
                   </>
                 )}
               </Button>
+
+              {DEV_MODE && (
+                <Button
+                  onClick={handleDevModeSkip}
+                  variant="outline"
+                  size="lg"
+                  className="w-full"
+                >
+                  Skip Login (Dev Mode)
+                </Button>
+              )}
 
               <p className="text-center text-xs text-muted-foreground">
                 By continuing, you agree to our Terms of Service and Privacy Policy

@@ -49,9 +49,11 @@ export function useD3Sort(containerRef: React.RefObject<HTMLDivElement>) {
       .nice()
       .range([innerHeight, 0])
 
+    // Theme-based styling
+    const isDark = theme === 'dark'
+
     // Color scale based on theme
     const getBarColor = (index: number, state: string) => {
-      const isDark = theme === 'dark'
       
       if (state === 'error') {
         return isDark ? '#ef4444' : '#dc2626' // red
@@ -80,9 +82,9 @@ export function useD3Sort(containerRef: React.RefObject<HTMLDivElement>) {
       .join('rect')
       .attr('class', 'bar')
       .attr('x', (_, i) => xScale(i.toString()) || 0)
-      .attr('y', (d) => yScale(d))
+      .attr('y', (d) => Math.max(0, yScale(d)))
       .attr('width', xScale.bandwidth())
-      .attr('height', (d) => innerHeight - yScale(d))
+      .attr('height', (d) => Math.max(0, innerHeight - yScale(d)))
       .attr('fill', (_, i) => getBarColor(i, visualizerState.state))
       .attr('rx', 4)
       .style('transition', `fill ${animationSpeed / 2}ms ease`)
@@ -121,8 +123,6 @@ export function useD3Sort(containerRef: React.RefObject<HTMLDivElement>) {
     g.selectAll('.x-axis path, .y-axis path, .x-axis line, .y-axis line')
       .attr('stroke', isDark ? '#4b5563' : '#d1d5db')
 
-    const isDark = theme === 'dark'
-
     // Animation function
     const animateTransition = () => {
       bars
@@ -130,8 +130,8 @@ export function useD3Sort(containerRef: React.RefObject<HTMLDivElement>) {
         .duration(animationSpeed)
         .ease(d3.easeCubicOut)
         .attr('x', (_, i) => xScale(i.toString()) || 0)
-        .attr('y', (d) => yScale(d))
-        .attr('height', (d) => innerHeight - yScale(d))
+        .attr('y', (d) => Math.max(0, yScale(d)))
+        .attr('height', (d) => Math.max(0, innerHeight - yScale(d)))
         .attr('fill', (_, i) => getBarColor(i, visualizerState.state))
     }
 
@@ -152,9 +152,9 @@ export function useD3Sort(containerRef: React.RefObject<HTMLDivElement>) {
       
       bars
         .attr('x', (_, i) => xScale(i.toString()) || 0)
-        .attr('y', (d) => yScale(d))
+        .attr('y', (d) => Math.max(0, yScale(d)))
         .attr('width', xScale.bandwidth())
-        .attr('height', (d) => newInnerHeight - yScale(d))
+        .attr('height', (d) => Math.max(0, newInnerHeight - yScale(d)))
     }
 
     window.addEventListener('resize', handleResize)

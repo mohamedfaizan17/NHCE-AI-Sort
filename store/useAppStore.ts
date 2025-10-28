@@ -37,8 +37,19 @@ interface AppState {
   resetHintLevel: () => void
 }
 
+// Generate random unsorted array
+const generateRandomArray = (size: number = 10): number[] => {
+  const arr = Array.from({ length: size }, (_, i) => (i + 1) * 10)
+  // Fisher-Yates shuffle
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr
+}
+
 const initialVisualizerState: VisualizerState = {
-  data: Array.from({ length: 10 }, (_, i) => (i + 1) * 10),
+  data: generateRandomArray(10),
   focusIndices: [],
   state: 'idle',
 }
@@ -57,12 +68,11 @@ export const useAppStore = create<AppState>((set) => ({
   resetVisualizerState: () =>
     set({
       visualizerState: {
-        ...initialVisualizerState,
-        data: Array.from(
-          { length: 10 },
-          () => Math.floor(Math.random() * 90) + 10
-        ),
+        data: generateRandomArray(10),
+        focusIndices: [],
+        state: 'idle',
       },
+      isAnimating: false,
     }),
 
   // Animation controls

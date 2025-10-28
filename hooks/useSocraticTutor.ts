@@ -5,7 +5,7 @@ import { AIResponse, ChatMessage } from '@/lib/types'
 import { toast } from 'sonner'
 
 interface UseSocraticTutorReturn {
-  sendMessage: (message: string) => Promise<void>
+  sendMessage: (message: string) => Promise<AIResponse | null>
   getHint: () => string
   isLoading: boolean
   error: string | null
@@ -44,11 +44,11 @@ export function useSocraticTutor(): UseSocraticTutorReturn {
   const { user, profile, refreshProfile } = useLearnerStore()
 
   const sendMessage = useCallback(
-    async (message: string) => {
+    async (message: string): Promise<AIResponse | null> => {
       if (!user) {
         setError('User not authenticated')
         toast.error('Please log in to continue')
-        return
+        return null
       }
 
       setIsLoading(true)
@@ -56,6 +56,11 @@ export function useSocraticTutor(): UseSocraticTutorReturn {
       setError(null)
 
       try {
+        // Get current visualizer state to send array data
+        const currentState = useAppStore.getState()
+        const visualizerState = currentState.visualizerState
+        const isAnimating = currentState.isAnimating
+        
         // Call the Next.js orchestration endpoint
         const response = await fetch('/api/chat/send', {
           method: 'POST',
@@ -66,6 +71,8 @@ export function useSocraticTutor(): UseSocraticTutorReturn {
             message,
             algorithm: currentAlgorithm,
             firebaseUid: user.firebaseUid,
+            currentArray: visualizerState.data,
+            isAnimating: isAnimating,
           }),
         })
 
@@ -76,17 +83,35 @@ export function useSocraticTutor(): UseSocraticTutorReturn {
         const data: AIResponse = await response.json()
 
         // Update visualizer state based on AI response
-        if (data.visualizerStateUpdate) {
-          setVisualizerState(data.visualizerStateUpdate)
+        // Only update if not currently animating to avoid interrupting the animation
+        if (data.visualizerStateUpdate && !isAnimating) {
+          // If AI provided new data (after a swap), update it
+          if (data.visualizerStateUpdate.data) {
+            setVisualizerState({
+              data: data.visualizerStateUpdate.data,
+              focusIndices: data.visualizerStateUpdate.focusIndices || [],
+              state: data.visualizerStateUpdate.state || 'idle',
+            })
+          } else {
+            // Otherwise just update focus and state without changing data
+            setVisualizerState({
+              focusIndices: data.visualizerStateUpdate.focusIndices || [],
+              state: data.visualizerStateUpdate.state || 'idle',
+            })
+          }
         }
 
         // Refresh user profile to get updated XP and mastery
         await refreshProfile()
 
-        // Show XP notification if awarded
+        // Show XP notification
         if (data.xpAwarded > 0) {
           toast.success(`+${data.xpAwarded} XP earned!`, {
             description: 'Great progress!',
+          })
+        } else if (data.xpAwarded < 0) {
+          toast.error(`${data.xpAwarded} XP`, {
+            description: 'Review the concept and try again',
           })
         }
 
@@ -97,12 +122,15 @@ export function useSocraticTutor(): UseSocraticTutorReturn {
           })
         }
 
+        return data
+
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'An error occurred'
         setError(errorMessage)
         toast.error('Failed to send message', {
           description: errorMessage,
         })
+        return null
       } finally {
         setIsLoading(false)
         setIsLoadingAIResponse(false)

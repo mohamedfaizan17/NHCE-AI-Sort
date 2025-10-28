@@ -11,7 +11,7 @@ import os
 load_dotenv()
 
 # Import routers
-from backend.api.v1.chat import router as chat_router
+from api.v1.chat import router as chat_router
 
 # Create FastAPI app
 app = FastAPI(

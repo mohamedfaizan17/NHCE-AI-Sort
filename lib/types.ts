@@ -38,6 +38,7 @@ export interface AIResponse {
     focusIndices: number[]
     state: 'idle' | 'comparing' | 'swapping' | 'sorted' | 'error'
     errorCase?: number[]
+    data?: number[]  // Optional: only provided when AI performs a swap
   }
   xpAwarded: number
 }

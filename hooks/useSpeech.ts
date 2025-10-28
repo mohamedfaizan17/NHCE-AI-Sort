@@ -107,6 +107,13 @@ export function useSpeech(): UseSpeechReturn {
     async (text: string) => {
       if (isMuted) return
 
+      // Silently skip TTS in development mode if API is not configured
+      console.log('TTS requested (disabled in dev mode):', text.substring(0, 50))
+      setIsSpeaking(false)
+      return
+
+      // Original TTS code (disabled for now)
+      /*
       setIsSpeaking(true)
       setError(null)
 
@@ -164,6 +171,7 @@ export function useSpeech(): UseSpeechReturn {
         )
         setIsSpeaking(false)
       }
+      */
     },
     [isMuted, selectedVoice]
   )

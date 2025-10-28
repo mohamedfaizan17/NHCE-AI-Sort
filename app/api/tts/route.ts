@@ -21,32 +21,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Call Gemini TTS API
+    // Call Gemini TTS API (using text-to-speech model)
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-tts:generateContent?key=${apiKey}`,
+      `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text,
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            speechConfig: {
-              voiceConfig: {
-                prebuiltVoiceConfig: {
-                  voiceName: voice,
-                },
-              },
-            },
+          input: { text },
+          voice: {
+            languageCode: 'en-US',
+            name: `en-US-Neural2-${voice === 'Puck' ? 'D' : 'A'}`,
+          },
+          audioConfig: {
+            audioEncoding: 'MP3',
           },
         }),
       }
@@ -64,7 +54,7 @@ export async function POST(request: NextRequest) {
     const data = await response.json()
     
     // Extract audio content from response
-    const audioContent = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data
+    const audioContent = data.audioContent
 
     if (!audioContent) {
       return NextResponse.json(

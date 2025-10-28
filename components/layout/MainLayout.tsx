@@ -7,11 +7,15 @@ import { SortVisualizer } from '@/components/visualizer/SortVisualizer'
 import { VisualizerControls } from '@/components/visualizer/VisualizerControls'
 import { ChatPanel } from '@/components/chat/ChatPanel'
 import { useAppStore } from '@/store/useAppStore'
+import { useSortingAnimation } from '@/hooks/useSortingAnimation'
 import { Button } from '@/components/ui/button'
 import { MessageSquare, BarChart3 } from 'lucide-react'
 
 export function MainLayout() {
   const { activeTab, setActiveTab, isSidebarOpen } = useAppStore()
+  
+  // Enable sorting animation
+  useSortingAnimation()
 
   return (
     <div className="flex h-screen flex-col">

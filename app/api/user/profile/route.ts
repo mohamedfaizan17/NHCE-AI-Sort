@@ -13,6 +13,31 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Development mode: Handle dev user
+    if (uid === 'dev-test-uid') {
+      return NextResponse.json({
+        user: {
+          id: 'dev-user',
+          firebaseUid: 'dev-test-uid',
+          email: 'dev@test.com',
+          displayName: 'Dev User',
+          photoURL: null,
+        },
+        profile: {
+          id: 'dev-profile',
+          userId: 'dev-user',
+          xp: 100, // Start with 100 XP
+          level: 1,
+          streak: 0,
+          lastActive: new Date(),
+          badges: [],
+          mastery: {},
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      })
+    }
+
     // Find or create user
     let user = await prisma.user.findUnique({
       where: { firebaseUid: uid },

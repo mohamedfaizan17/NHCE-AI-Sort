@@ -431,10 +431,10 @@ export function LandingPage() {
             <div>
               <h3 className="mb-4 font-semibold">Resources</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/auth" className="hover:text-foreground transition-colors">Documentation</Link></li>
-                <li><Link href="/auth" className="hover:text-foreground transition-colors">Tutorials</Link></li>
-                <li><Link href="/auth" className="hover:text-foreground transition-colors">Blog</Link></li>
-                <li><Link href="/auth" className="hover:text-foreground transition-colors">Community</Link></li>
+                <li><Link href="/docs" className="hover:text-foreground transition-colors">Documentation</Link></li>
+                <li><Link href="/docs" className="hover:text-foreground transition-colors">Tutorials</Link></li>
+                <li><Link href="/blog" className="hover:text-foreground transition-colors">Blog</Link></li>
+                <li><Link href="/community" className="hover:text-foreground transition-colors">Community</Link></li>
               </ul>
             </div>
 

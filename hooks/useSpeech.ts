@@ -30,8 +30,6 @@ export function useSpeech(): UseSpeechReturn {
   const audioContextRef = useRef<AudioContext | null>(null)
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null)
 
-  const { isMuted, selectedVoice } = useAppStore()
-
   // Initialize Speech Recognition
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -105,81 +103,68 @@ export function useSpeech(): UseSpeechReturn {
 
   const speak = useCallback(
     async (text: string) => {
-      if (isMuted) return
+      // Get fresh muted state from store
+      const currentMuted = useAppStore.getState().isMuted
+      
+      if (currentMuted) {
+        console.log('TTS muted, skipping speech')
+        return
+      }
 
-      // Silently skip TTS in development mode if API is not configured
-      console.log('TTS requested (disabled in dev mode):', text.substring(0, 50))
-      setIsSpeaking(false)
-      return
+      // Use browser's built-in Web Speech API
+      if (typeof window === 'undefined' || !window.speechSynthesis) {
+        console.log('TTS not supported')
+        return
+      }
 
-      // Original TTS code (disabled for now)
-      /*
+      // Cancel any ongoing speech
+      window.speechSynthesis.cancel()
+
       setIsSpeaking(true)
       setError(null)
 
       try {
-        // Call Gemini TTS API via Next.js endpoint
-        const response = await fetch('/api/tts', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            text,
-            voice: selectedVoice,
-          }),
-        })
-
-        if (!response.ok) {
-          throw new Error('TTS request failed')
+        const utterance = new SpeechSynthesisUtterance(text)
+        
+        // Configure voice
+        const voices = window.speechSynthesis.getVoices()
+        if (voices.length > 0) {
+          // Try to find a good English voice
+          const preferredVoice = voices.find(v => 
+            v.lang.startsWith('en') && (v.name.includes('Google') || v.name.includes('Microsoft'))
+          ) || voices.find(v => v.lang.startsWith('en')) || voices[0]
+          
+          utterance.voice = preferredVoice
         }
 
-        const data = await response.json()
-        const { audioContent } = data
+        utterance.rate = 0.9 // Slightly slower for clarity
+        utterance.pitch = 1.0
+        utterance.volume = 1.0
 
-        // Convert PCM to WAV
-        const wavBuffer = pcmToWav(audioContent)
-
-        // Play audio
-        if (audioContextRef.current) {
-          const audioBuffer = await audioContextRef.current.decodeAudioData(
-            wavBuffer
-          )
-
-          // Stop any currently playing audio
-          if (audioSourceRef.current) {
-            audioSourceRef.current.stop()
-          }
-
-          const source = audioContextRef.current.createBufferSource()
-          source.buffer = audioBuffer
-          source.connect(audioContextRef.current.destination)
-
-          source.onended = () => {
-            setIsSpeaking(false)
-            audioSourceRef.current = null
-          }
-
-          audioSourceRef.current = source
-          source.start()
-        } else {
-          throw new Error('AudioContext not initialized')
+        utterance.onend = () => {
+          setIsSpeaking(false)
         }
+
+        utterance.onerror = (event) => {
+          console.error('TTS error:', event)
+          setError('Failed to generate speech')
+          setIsSpeaking(false)
+        }
+
+        window.speechSynthesis.speak(utterance)
       } catch (err) {
         setError(
           err instanceof Error ? err.message : 'Failed to generate speech'
         )
         setIsSpeaking(false)
       }
-      */
     },
-    [isMuted, selectedVoice]
+    []
   )
 
   const stopSpeaking = useCallback(() => {
-    if (audioSourceRef.current) {
-      audioSourceRef.current.stop()
-      audioSourceRef.current = null
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel()
       setIsSpeaking(false)
     }
   }, [])

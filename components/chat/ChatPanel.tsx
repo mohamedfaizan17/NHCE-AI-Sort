@@ -73,10 +73,10 @@ export function ChatPanel() {
   // Speak AI messages
   useEffect(() => {
     const lastMessage = messages[messages.length - 1]
-    if (lastMessage && lastMessage.role === 'ai' && !isMuted) {
+    if (lastMessage && lastMessage.role === 'ai') {
       speak(lastMessage.content)
     }
-  }, [messages, isMuted, speak])
+  }, [messages, speak])
 
   const handleSendMessage = async (content: string) => {
     if (!user) {

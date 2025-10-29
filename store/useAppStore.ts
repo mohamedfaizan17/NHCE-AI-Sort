@@ -75,7 +75,11 @@ export const useAppStore = create<AppState>((set) => ({
 
   // Audio controls
   isMuted: false,
-  toggleMute: () => set((state) => ({ isMuted: !state.isMuted })),
+  toggleMute: () => set((state) => {
+    const newMuted = !state.isMuted
+    console.log('Mute toggled:', newMuted)
+    return { isMuted: newMuted }
+  }),
   selectedVoice: 'Puck',
   setSelectedVoice: (voice) => set({ selectedVoice: voice }),
 

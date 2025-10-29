@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { devProfile } from '../../chat/devState'
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,12 +27,12 @@ export async function GET(request: NextRequest) {
         profile: {
           id: 'dev-profile',
           userId: 'dev-user',
-          xp: 100, // Start with 100 XP
-          level: 1,
-          streak: 0,
+          xp: devProfile.xp,
+          level: devProfile.level,
+          streak: devProfile.streak,
           lastActive: new Date(),
-          badges: [],
-          mastery: {},
+          badges: devProfile.badges,
+          mastery: devProfile.mastery,
           createdAt: new Date(),
           updatedAt: new Date(),
         },

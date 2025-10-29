@@ -214,60 +214,59 @@ export interface Badge {
 
 export const BADGES: Badge[] = [
   {
-    id: 'first-steps',
-    name: 'First Steps',
-    description: 'Complete your first conversation',
+    id: 'xp-100',
+    name: 'First',
+    description: 'Earn 100 XP',
     icon: '🎯',
-    condition: (profile) => profile.xp > 0,
+    condition: (profile) => profile.xp >= 100,
   },
   {
-    id: 'bubble-master',
-    name: 'Bubble Master',
-    description: 'Master Bubble Sort',
+    id: 'xp-200',
+    name: 'Achiever',
+    description: 'Earn 200 XP',
+    icon: '🥉',
+    condition: (profile) => profile.xp >= 200,
+  },
+  {
+    id: 'xp-400',
+    name: 'Champion',
+    description: 'Earn 400 XP',
+    icon: '🥈',
+    condition: (profile) => profile.xp >= 400,
+  },
+  {
+    id: 'xp-600',
+    name: 'Legend',
+    description: 'Earn 600 XP',
+    icon: '🥇',
+    condition: (profile) => profile.xp >= 600,
+  },
+  {
+    id: 'xp-800',
+    name: 'Bubble',
+    description: 'Earn 800 XP',
     icon: '🫧',
-    condition: (profile) => {
-      const mastery = typeof profile.mastery === 'string' 
-        ? JSON.parse(profile.mastery) 
-        : profile.mastery
-      return mastery.bubbleSort >= 0.8
-    },
+    condition: (profile) => profile.xp >= 800,
   },
   {
-    id: 'quick-learner',
-    name: 'Quick Learner',
-    description: 'Master Quick Sort',
+    id: 'xp-1000',
+    name: 'Quick',
+    description: 'Earn 1000 XP',
     icon: '⚡',
-    condition: (profile) => {
-      const mastery = typeof profile.mastery === 'string' 
-        ? JSON.parse(profile.mastery) 
-        : profile.mastery
-      return mastery.quickSort >= 0.8
-    },
+    condition: (profile) => profile.xp >= 1000,
   },
   {
-    id: 'week-streak',
-    name: 'Week Warrior',
-    description: 'Maintain a 7-day streak',
+    id: 'xp-1500',
+    name: 'Week',
+    description: 'Earn 1500 XP',
     icon: '🔥',
-    condition: (profile) => profile.streak >= 7,
+    condition: (profile) => profile.xp >= 1500,
   },
   {
-    id: 'level-10',
-    name: 'Rising Star',
-    description: 'Reach level 10',
+    id: 'xp-2000',
+    name: 'Rising',
+    description: 'Earn 2000 XP',
     icon: '⭐',
-    condition: (profile) => profile.level >= 10,
-  },
-  {
-    id: 'algorithm-master',
-    name: 'Algorithm Master',
-    description: 'Master all algorithms',
-    icon: '🏆',
-    condition: (profile) => {
-      const mastery = typeof profile.mastery === 'string' 
-        ? JSON.parse(profile.mastery) 
-        : profile.mastery
-      return ALGORITHMS.every(algo => mastery[algo.id] >= 0.8)
-    },
+    condition: (profile) => profile.xp >= 2000,
   },
 ]

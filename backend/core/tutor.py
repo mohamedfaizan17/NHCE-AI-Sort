@@ -5,25 +5,25 @@ LangChain-powered Socratic Tutor
 import json
 import os
 from typing import Dict, List, Any
-from langchain_groq import ChatGroq
-from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+from dotenv import load_dotenv
+import google.generativeai as genai
 from .prompts import get_socratic_prompt
+
+# Load environment variables
+load_dotenv()
 
 
 class SocraticTutor:
     def __init__(self):
-        api_key = os.getenv("GROQ_API_KEY")
-        # Allow running without external API for local dev/testing
-        if not api_key:
-            self.llm = None
-            self.use_mock = True
-        else:
-            self.use_mock = False
-            self.llm = ChatGroq(
-                model="llama-3.3-70b-versatile",
-                groq_api_key=api_key,
-                temperature=0.7,
-            )
+        api_key = os.getenv("GOOGLE_AI_API_KEY")
+        print(f"GOOGLE_AI_API_KEY loaded: {bool(api_key)}", flush=True)
+        print(f"API key length: {len(api_key) if api_key else 0}", flush=True)
+        
+        # Use Gemini 2.0 Flash Exp - Optimized for speed
+        print("Initializing Google Gemini 2.0 Flash Exp...", flush=True)
+        genai.configure(api_key=api_key)
+        self.llm = genai.GenerativeModel('gemini-2.0-flash-exp')
+        print("Google Gemini 2.0 Flash Exp initialized successfully", flush=True)
     
     def generate_response(
         self,
@@ -53,52 +53,49 @@ class SocraticTutor:
         # Get current mastery for this algorithm
         current_mastery = learner_mastery.get(algorithm, 0.0)
         
-        # Format chat history for prompt
+        # Format chat history for prompt (reduced to 5 for speed)
         history_str = "\n".join([
             f"{msg['role'].upper()}: {msg['content']}"
-            for msg in chat_history[-10:]  # Last 10 messages
+            for msg in chat_history[-5:]  # Last 5 messages only
         ])
         
         # Add array data to context if provided
         if current_array:
-            history_str += f"\n\nCURRENT ARRAY BEING SORTED: {current_array}"
+            history_str += f"\n\nCURRENT ARRAY: {current_array}"
         
         # Create system prompt
         system_prompt = get_socratic_prompt(algorithm, current_mastery, history_str)
         
-        # Build message chain
-        messages = [SystemMessage(content=system_prompt)]
+        # Build prompt with chat history
+        full_prompt = system_prompt + "\n\n"
         
-        # Add chat history - include AI responses too
-        for msg in chat_history[-10:]:  # Last 10 for better context
+        # Add chat history (only last 5)
+        for msg in chat_history[-5:]:
             if msg["role"] == "user":
-                messages.append(HumanMessage(content=msg["content"]))
+                full_prompt += f"USER: {msg['content']}\n"
             elif msg["role"] == "ai" or msg["role"] == "assistant":
-                messages.append(AIMessage(content=msg["content"]))
+                full_prompt += f"ASSISTANT: {msg['content']}\n"
         
         # Add instruction for JSON response
-        messages.append(
-            HumanMessage(
-                content="Generate your Socratic response as a valid JSON object following the specified format. Do not include any markdown formatting or additional text."
-            )
-        )
+        full_prompt += "\nGenerate your Socratic response as a valid JSON object following the specified format. Do not include any markdown formatting or additional text."
         
-        # If running in mock mode, synthesize a minimal, deterministic response
-        if getattr(self, "use_mock", False) or self.llm is None:
-            next_mastery = min(1.0, max(0.0, current_mastery + 0.03))
-            return {
-                "socraticQuestion": "What happens to the largest element after one full pass?",
-                "analysisOfUserAnswer": "continuing",
-                "learnerMasteryUpdate": {algorithm: next_mastery},
-                "visualizerStateUpdate": {"focusIndices": [0, 1], "state": "comparing"},
-                "xpAwarded": 5,
-            }
-
         try:
-            # Invoke LLM
-            response = self.llm.invoke(messages)
-            response_text = response.content.strip()
+            # Call Gemini API directly - NO TIMEOUTS OR FALLBACKS
+            print("🚀 Calling Gemini 2.5 Flash...", flush=True)
+            response = self.llm.generate_content(full_prompt)
+            response_text = response.text.strip()
+            print("✅ Gemini response received", flush=True)
             
+            print(f"Raw LLM response: {response_text[:500]}...")  # Log first 500 chars
+            
+            # Try to extract JSON from the response
+            # Sometimes LLM adds extra text before/after JSON
+            json_start = response_text.find('{')
+            json_end = response_text.rfind('}')
+            
+            if json_start != -1 and json_end != -1:
+                response_text = response_text[json_start:json_end + 1]
+                
             # Remove markdown code fences if present
             if response_text.startswith("```json"):
                 response_text = response_text[7:]
@@ -109,18 +106,24 @@ class SocraticTutor:
             
             response_text = response_text.strip()
             
+            print(f"Cleaned response: {response_text[:500]}...")  # Log cleaned version
+            
             # Parse JSON response
             parsed_response = json.loads(response_text)
+            print(f"Successfully parsed JSON response")
             
-            # Validate and set defaults
+            # Validate and set defaults with deterministic XP awarding
+            analysis = parsed_response.get("analysisOfUserAnswer", "continuing")
+
+            # Award XP strictly: 5 for correct responses, otherwise 0
+            xp_awarded = 5 if analysis == "correct" else 0
+
             result = {
                 "socraticQuestion": parsed_response.get(
                     "socraticQuestion",
                     "Great observation! Can you explain your reasoning further?"
                 ),
-                "analysisOfUserAnswer": parsed_response.get(
-                    "analysisOfUserAnswer", "continuing"
-                ),
+                "analysisOfUserAnswer": analysis,
                 "learnerMasteryUpdate": parsed_response.get(
                     "learnerMasteryUpdate", {algorithm: current_mastery}
                 ),
@@ -128,33 +131,46 @@ class SocraticTutor:
                     "visualizerStateUpdate",
                     {"focusIndices": [], "state": "idle"}
                 ),
-                "xpAwarded": parsed_response.get("xpAwarded", 5),
+                "xpAwarded": xp_awarded,
             }
             
             return result
             
         except json.JSONDecodeError as e:
-            print(f"JSON Parse Error: {e}")
-            print(f"Response text: {response_text}")
+            print(f"JSON Parse Error: {e}", flush=True)
+            print(f"Response text: {response_text}", flush=True)
             # Fallback response
             return {
                 "socraticQuestion": "That's an interesting point! Can you elaborate on your thinking?",
                 "analysisOfUserAnswer": "continuing",
                 "learnerMasteryUpdate": {algorithm: current_mastery},
                 "visualizerStateUpdate": {"focusIndices": [], "state": "idle"},
-                "xpAwarded": 5,
+                "xpAwarded": 0,
             }
         
         except Exception as e:
-            print(f"Error generating response: {e}")
-            print(f"Error type: {type(e)}")
+            print(f"🚨 GEMINI API ERROR: {e}", flush=True)
+            print(f"Error type: {type(e)}", flush=True)
+            
+            # Check if it's a quota/rate limit error
+            error_str = str(e).lower()
+            if "quota" in error_str or "rate limit" in error_str or "429" in error_str:
+                print("💸 Rate limit hit - API quota exceeded", flush=True)
+            elif "timeout" in error_str:
+                print("⏰ API call timed out", flush=True)
+            elif "network" in error_str or "connection" in error_str:
+                print("🌐 Network connection issue", flush=True)
+            else:
+                print("❓ Unknown API error", flush=True)
+            
             import traceback
             traceback.print_exc()
-            # Fallback response
+            
+            # Return a more specific error response
             return {
-                "socraticQuestion": "Let's continue exploring. What aspect would you like to understand better?",
+                "socraticQuestion": f"I'm experiencing a technical issue. Let's continue with {algorithm.replace('Sort', ' Sort')} - what would you like to explore about this algorithm?",
                 "analysisOfUserAnswer": "continuing",
                 "learnerMasteryUpdate": {algorithm: current_mastery},
                 "visualizerStateUpdate": {"focusIndices": [], "state": "idle"},
-                "xpAwarded": 5,
+                "xpAwarded": 0,
             }

@@ -96,7 +96,7 @@ export function UserProfileCard() {
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     whileHover={{ scale: 1.05 }}
-                    className="flex flex-col items-center gap-1 rounded-lg bg-gradient-to-br from-yellow-400/20 to-orange-400/20 p-3 transition-transform"
+                    className="flex flex-col items-center gap-1 rounded-lg bg-gradient-to-br from-yellow-400/30 to-orange-400/30 p-3 text-yellow-100 shadow-[0_0_18px_rgba(251,191,36,0.45)] ring-2 ring-yellow-400/40 transition-transform"
                   >
                     <span className="text-2xl">{badge.icon}</span>
                     <span className="text-[10px] text-center font-medium leading-tight">

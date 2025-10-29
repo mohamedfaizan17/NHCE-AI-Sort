@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-
-// In-memory chat history for dev mode (persists across requests)
-const devChatHistory: any[] = []
+import { devChatHistoryByAlgo, devProfile } from '../devState'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { message, algorithm, firebaseUid, currentArray } = body
+
+    console.log('📨 Chat message received:', { message, algorithm, firebaseUid })
 
     if (!message || !algorithm || !firebaseUid) {
       return NextResponse.json(
@@ -16,28 +16,57 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Development mode: Handle dev user - still call AI backend
+    // Check if dev mode
     const isDev = firebaseUid === 'dev-test-uid'
     
     let user: any
     let recentMessages: any[] = []
-    let mastery: any
+    let mastery: any = {}
 
     if (isDev) {
-      // Dev mode: Use in-memory chat history
-      user = { id: 'dev-user', profile: { mastery: {}, xp: 100, level: 2 } }
-      recentMessages = devChatHistory.slice(-10) // Last 10 messages
-      mastery = {}
+      console.log('🔧 Dev mode: Using in-memory storage')
+      // Initialize algorithm-specific history if not exists
+      if (!devChatHistoryByAlgo[algorithm]) {
+        devChatHistoryByAlgo[algorithm] = []
+      }
+      
+      user = { id: 'dev-user', profile: devProfile }
+      recentMessages = devChatHistoryByAlgo[algorithm].slice(-10)
+      mastery = devProfile.mastery
     } else {
-      // Find user
+      console.log('🔍 Looking up user in database...')
+      // Find user in database
       user = await prisma.user.findUnique({
         where: { firebaseUid },
         include: { profile: true },
       })
 
-      if (!user || !user.profile) {
-        return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      if (!user) {
+        console.log('❌ User not found, creating new user...')
+        // Create user if doesn't exist
+        user = await prisma.user.create({
+          data: {
+            firebaseUid,
+            email: `${firebaseUid}@temp.com`, // Temporary email
+            profile: {
+              create: {
+                xp: 0,
+                level: 1,
+                streak: 0,
+                badges: '[]',
+                mastery: '{}',
+              },
+            },
+          },
+          include: { profile: true },
+        })
       }
+
+      if (!user.profile) {
+        return NextResponse.json({ error: 'User profile not found' }, { status: 404 })
+      }
+
+      console.log('✅ User found:', user.id)
 
       // Save user message to database
       await prisma.chatMessage.create({
@@ -49,7 +78,7 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      // Get recent messages for context (last 10 for better context)
+      // Get recent messages for context
       recentMessages = await prisma.chatMessage.findMany({
         where: { userId: user.id, algorithm },
         orderBy: { timestamp: 'desc' },
@@ -68,32 +97,28 @@ export async function POST(request: NextRequest) {
     }
 
     // Call Python AI backend
-    const pythonBackendUrl = process.env.PYTHON_BACKEND_URL || 'http://localhost:8000'
+    const pythonBackendUrl = process.env.PYTHON_BACKEND_URL || 'http://localhost:8001'
     
-    // Prepare chat history
+    // Prepare chat history for AI
     const chatHistory = recentMessages.map((msg: any) => ({
       role: msg.role,
       content: msg.content,
     }))
     
-    // Add current user message to history
-    chatHistory.push({
-      role: 'user',
-      content: message,
-    })
-    
-    console.log('Calling AI backend:', pythonBackendUrl)
-    console.log('Chat history:', chatHistory)
-    console.log('Algorithm:', algorithm)
-    console.log('Current array:', currentArray)
-    
-    let aiResponse
+    console.log('🔥 Calling AI backend:', pythonBackendUrl)
+    console.log('📊 Chat history length:', chatHistory.length)
+
+    // Call Python AI backend with timeout
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 30000)
+
     try {
       const aiBackendResponse = await fetch(`${pythonBackendUrl}/api/v1/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        signal: controller.signal,
         body: JSON.stringify({
           chatHistory,
           algorithm,
@@ -102,99 +127,165 @@ export async function POST(request: NextRequest) {
         }),
       })
 
-      console.log('AI backend response status:', aiBackendResponse.status)
+      clearTimeout(timeoutId)
 
       if (!aiBackendResponse.ok) {
         const errorText = await aiBackendResponse.text()
-        console.error('AI backend error response:', errorText)
-        throw new Error(`AI backend request failed: ${aiBackendResponse.status}`)
+        console.error('❌ AI backend error:', errorText)
+        throw new Error(`AI backend failed: ${aiBackendResponse.status}`)
       }
 
-      aiResponse = await aiBackendResponse.json()
-      console.log('AI backend response:', aiResponse)
-    } catch (aiError) {
-      console.error('AI Backend Error:', aiError)
-      // Fallback response if AI backend is unavailable
-      aiResponse = {
-        socraticQuestion:
-          "Great observation! Let me guide you further with another question...",
-        analysisOfUserAnswer: 'continuing',
+      const aiResponse = await aiBackendResponse.json()
+      console.log('✅ AI response received')
+
+      // Save AI response and update profile
+      if (isDev) {
+        // Dev mode: Update in-memory state
+        devChatHistoryByAlgo[algorithm].push({ role: 'user', content: message })
+        devChatHistoryByAlgo[algorithm].push({ role: 'ai', content: aiResponse.socraticQuestion })
+        
+        // Track new badges per response
+        devProfile.newBadges = []
+        const oldBadgeCount = (devProfile.badges || []).length
+
+        devProfile.xp += aiResponse.xpAwarded || 0
+        devProfile.level = Math.floor(1 + Math.log2(devProfile.xp / 100 + 1))
+        devProfile.mastery = {
+          ...devProfile.mastery,
+          ...aiResponse.learnerMasteryUpdate,
+        }
+
+        // Check and award badges based on XP milestones
+        const badges: string[] = devProfile.badges || []
+        const xpMilestones = [
+          { xp: 100, id: 'xp-100' },
+          { xp: 200, id: 'xp-200' },
+          { xp: 400, id: 'xp-400' },
+          { xp: 600, id: 'xp-600' },
+          { xp: 800, id: 'xp-800' },
+          { xp: 1000, id: 'xp-1000' },
+          { xp: 1500, id: 'xp-1500' },
+          { xp: 2000, id: 'xp-2000' },
+        ]
+        
+        xpMilestones.forEach(milestone => {
+          if (devProfile.xp >= milestone.xp && !badges.includes(milestone.id)) {
+            badges.push(milestone.id)
+          }
+        })
+        
+        devProfile.badges = badges
+        devProfile.newBadges = badges.slice(oldBadgeCount)
+      } else {
+        // Save AI response to database
+        await prisma.chatMessage.create({
+          data: {
+            userId: user.id,
+            algorithm,
+            role: 'ai',
+            content: aiResponse.socraticQuestion,
+            metadata: JSON.stringify({
+              analysis: aiResponse.analysisOfUserAnswer,
+              xpAwarded: aiResponse.xpAwarded,
+            }),
+          },
+        })
+
+        // Update user profile
+        const currentMastery =
+          typeof user.profile.mastery === 'string'
+            ? JSON.parse(user.profile.mastery)
+            : user.profile.mastery
+
+        const updatedMastery = {
+          ...currentMastery,
+          ...aiResponse.learnerMasteryUpdate,
+        }
+
+        const newXP = user.profile.xp + (aiResponse.xpAwarded || 0)
+        const newLevel = Math.floor(1 + Math.log2(newXP / 100 + 1))
+
+        // Check for new badges
+        const currentBadges: string[] = 
+          typeof user.profile.badges === 'string'
+            ? JSON.parse(user.profile.badges)
+            : (user.profile.badges || [])
+
+        const newBadges: string[] = []
+        const xpMilestones = [
+          { xp: 100, id: 'xp-100' },
+          { xp: 200, id: 'xp-200' },
+          { xp: 400, id: 'xp-400' },
+          { xp: 600, id: 'xp-600' },
+          { xp: 800, id: 'xp-800' },
+          { xp: 1000, id: 'xp-1000' },
+          { xp: 1500, id: 'xp-1500' },
+          { xp: 2000, id: 'xp-2000' },
+        ]
+
+        xpMilestones.forEach(milestone => {
+          if (newXP >= milestone.xp && !currentBadges.includes(milestone.id)) {
+            currentBadges.push(milestone.id)
+            newBadges.push(milestone.id)
+          }
+        })
+
+        await prisma.profile.update({
+          where: { userId: user.id },
+          data: {
+            xp: newXP,
+            level: newLevel,
+            mastery: JSON.stringify(updatedMastery),
+            badges: JSON.stringify(currentBadges),
+            lastActive: new Date(),
+          },
+        })
+
+        // Update leaderboard
+        await prisma.leaderboard.upsert({
+          where: { userId: user.id },
+          update: {
+            totalXP: newXP,
+            level: newLevel,
+          },
+          create: {
+            userId: user.id,
+            displayName: user.displayName || 'Anonymous',
+            photoURL: user.photoURL,
+            totalXP: newXP,
+            level: newLevel,
+          },
+        })
+
+        // Add new badges to response
+        aiResponse.newBadges = newBadges
+      }
+
+      // Return response with badge notifications
+      return NextResponse.json({
+        ...aiResponse,
+        newBadges: isDev ? devProfile.newBadges : aiResponse.newBadges,
+      })
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId)
+      console.error('🚨 AI backend fetch error:', fetchError.message)
+      
+      // Return fallback response
+      return NextResponse.json({
+        socraticQuestion: "I'm having trouble connecting to the AI. Can you try again?",
+        analysisOfUserAnswer: 'error',
         learnerMasteryUpdate: mastery,
-        visualizerStateUpdate: {
-          focusIndices: [0, 1],
-          state: 'comparing',
-        },
-        xpAwarded: 5,
-      }
-    }
-
-    // Save chat history
-    if (isDev) {
-      // Save to in-memory history for dev mode
-      devChatHistory.push({ role: 'user', content: message })
-      devChatHistory.push({ role: 'ai', content: aiResponse.socraticQuestion })
-    } else {
-      // Save AI response to database
-      await prisma.chatMessage.create({
-        data: {
-          userId: user.id,
-          algorithm,
-          role: 'ai',
-          content: aiResponse.socraticQuestion,
-          metadata: JSON.stringify({
-            analysis: aiResponse.analysisOfUserAnswer,
-            xpAwarded: aiResponse.xpAwarded,
-          }),
-        },
-      })
-
-      // Update user profile with new mastery and XP
-      const currentMastery =
-        typeof user.profile.mastery === 'string'
-          ? JSON.parse(user.profile.mastery)
-          : user.profile.mastery
-
-      const updatedMastery = {
-        ...currentMastery,
-        ...aiResponse.learnerMasteryUpdate,
-      }
-
-      const newXP = user.profile.xp + aiResponse.xpAwarded
-      const newLevel = Math.floor(1 + Math.log2(newXP / 100 + 1))
-
-      await prisma.profile.update({
-        where: { userId: user.id },
-        data: {
-          xp: newXP,
-          level: newLevel,
-          mastery: JSON.stringify(updatedMastery),
-          lastActive: new Date(),
-        },
-      })
-
-      // Update leaderboard
-      await prisma.leaderboard.upsert({
-        where: { userId: user.id },
-        update: {
-          totalXP: newXP,
-          level: newLevel,
-        },
-        create: {
-          userId: user.id,
-          displayName: user.displayName || 'Anonymous',
-          photoURL: user.photoURL,
-          totalXP: newXP,
-          level: newLevel,
-        },
+        visualizerStateUpdate: { focusIndices: [], state: 'idle' },
+        xpAwarded: 0,
       })
     }
-
-    // Return AI response to client
-    return NextResponse.json(aiResponse)
-  } catch (error) {
-    console.error('Error processing chat message:', error)
+  } catch (error: any) {
+    console.error('🚨 Error processing chat message:', error)
+    console.error('Error name:', error?.name)
+    console.error('Error message:', error?.message)
+    console.error('Error stack:', error?.stack)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error?.message },
       { status: 500 }
     )
   }

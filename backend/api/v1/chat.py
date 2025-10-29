@@ -36,9 +36,16 @@ async def process_chat(request: ChatRequest):
     """
     Process a chat message and return Socratic guidance.
     """
+    import sys
+    sys.stdout.flush()
+    sys.stderr.flush()
+    
+    print(f"\n🚀 CHAT ENDPOINT HIT! 🚀", flush=True)
+    print(f"Algorithm: {request.algorithm}", flush=True)
+    print(f"Chat history length: {len(request.chatHistory)}", flush=True)
+    
     try:
-        print(f"\n=== CHAT ENDPOINT CALLED ===")
-        print(f"Request: {request}")
+        print(f"\n=== PROCESSING CHAT REQUEST ===", flush=True)
         
         # Convert Pydantic models to dicts
         chat_history = [

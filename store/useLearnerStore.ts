@@ -90,10 +90,12 @@ export const useLearnerStore = create<LearnerState>((set, get) => ({
   fetchProfile: async (firebaseUid: string) => {
     set({ isLoading: true, error: null })
     try {
+      console.log('📊 Fetching profile for UID:', firebaseUid)
       const response = await fetch(`/api/user/profile?uid=${firebaseUid}`)
       if (!response.ok) throw new Error('Failed to fetch profile')
       
       const data = await response.json()
+      console.log('📊 Profile data received:', data.profile)
       
       // Parse JSON strings
       const profile: Profile = {
@@ -106,12 +108,15 @@ export const useLearnerStore = create<LearnerState>((set, get) => ({
           : data.profile.mastery,
       }
 
+      console.log('📊 Parsed profile - XP:', profile.xp, 'Level:', profile.level, 'Badges:', profile.badges)
+
       set({
         user: data.user,
         profile,
         isLoading: false,
       })
     } catch (error) {
+      console.error('❌ Error fetching profile:', error)
       set({
         error: error instanceof Error ? error.message : 'An error occurred',
         isLoading: false,

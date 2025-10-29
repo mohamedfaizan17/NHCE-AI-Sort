@@ -37,19 +37,11 @@ interface AppState {
   resetHintLevel: () => void
 }
 
-// Generate random unsorted array
-const generateRandomArray = (size: number = 10): number[] => {
-  const arr = Array.from({ length: size }, (_, i) => (i + 1) * 10)
-  // Fisher-Yates shuffle
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]]
-  }
-  return arr
-}
+// FIXED static array - always starts with the same array for consistency
+const STATIC_INITIAL_ARRAY = [70, 30, 90, 10, 50, 80, 20, 60, 100, 40]
 
 const initialVisualizerState: VisualizerState = {
-  data: generateRandomArray(10),
+  data: STATIC_INITIAL_ARRAY,
   focusIndices: [],
   state: 'idle',
 }
@@ -68,7 +60,7 @@ export const useAppStore = create<AppState>((set) => ({
   resetVisualizerState: () =>
     set({
       visualizerState: {
-        data: generateRandomArray(10),
+        data: [...STATIC_INITIAL_ARRAY], // Copy the static array
         focusIndices: [],
         state: 'idle',
       },

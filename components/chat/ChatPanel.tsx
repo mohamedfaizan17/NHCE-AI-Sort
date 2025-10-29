@@ -21,21 +21,39 @@ interface Message {
 }
 
 export function ChatPanel() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
+  const { currentAlgorithm } = useAppStore()
+  
+  const getInitialMessage = (algorithm: string) => {
+    const algoNames: Record<string, string> = {
+      bubbleSort: 'Bubble Sort',
+      selectionSort: 'Selection Sort',
+      insertionSort: 'Insertion Sort',
+      mergeSort: 'Merge Sort',
+      quickSort: 'Quick Sort',
+      heapSort: 'Heap Sort',
+    }
+    const algoName = algoNames[algorithm] || 'this sorting algorithm'
+    
+    return {
       id: '1',
-      role: 'ai',
-      content:
-        "Hello! I'm Sort-crates, your Socratic tutor. I'm here to help you deeply understand sorting algorithms through guided questions. Let's explore together!\n\nTell me: What do you think is the first step in understanding how Bubble Sort works?",
+      role: 'ai' as const,
+      content: `Hello! I'm Sort-crates, your Socratic tutor. I'm here to help you deeply understand sorting algorithms through guided questions. Let's explore ${algoName} together!\n\nTell me: What do you think is the first step in understanding how ${algoName} works?`,
       timestamp: new Date(),
-    },
-  ])
+    }
+  }
+  
+  const [messages, setMessages] = useState<Message[]>([getInitialMessage(currentAlgorithm)])
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const { sendMessage, getHint, isLoading } = useSocraticTutor()
   const { speak, isSpeaking } = useSpeech()
   const { visualizerState, isMuted } = useAppStore()
   const { user } = useLearnerStore()
+  
+  // Reset chat when algorithm changes
+  useEffect(() => {
+    setMessages([getInitialMessage(currentAlgorithm)])
+  }, [currentAlgorithm])
 
   // Auto-scroll to bottom
   useEffect(() => {

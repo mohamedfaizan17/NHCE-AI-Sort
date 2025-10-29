@@ -102,7 +102,9 @@ export function useSocraticTutor(): UseSocraticTutorReturn {
         }
 
         // Refresh user profile to get updated XP and mastery
+        console.log('🔄 Refreshing profile after chat response...')
         await refreshProfile()
+        console.log('✅ Profile refreshed')
 
         // Show XP notification
         if (data.xpAwarded > 0) {
@@ -112,6 +114,30 @@ export function useSocraticTutor(): UseSocraticTutorReturn {
         } else if (data.xpAwarded < 0) {
           toast.error(`${data.xpAwarded} XP`, {
             description: 'Review the concept and try again',
+          })
+        } else if (data.xpAwarded === 0) {
+          console.log('No XP awarded for this response')
+        }
+        
+        // Show badge earned notification
+        if (data.newBadges && data.newBadges.length > 0) {
+          data.newBadges.forEach((badgeId: string) => {
+            const badgeNames: Record<string, string> = {
+              'xp-100': '🎯 First',
+              'xp-200': '🥉 Achiever',
+              'xp-400': '🥈 Champion',
+              'xp-600': '🥇 Legend',
+              'xp-800': '🫧 Bubble',
+              'xp-1000': '⚡ Quick',
+              'xp-1500': '🔥 Week',
+              'xp-2000': '⭐ Rising',
+            }
+            const badgeName = badgeNames[badgeId] || 'New Badge'
+            
+            toast.success(`🎉 Badge Earned: ${badgeName}!`, {
+              description: 'Congratulations on your achievement!',
+              duration: 5000,
+            })
           })
         }
 

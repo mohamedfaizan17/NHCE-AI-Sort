@@ -41,6 +41,7 @@ export interface AIResponse {
     data?: number[]  // Optional: only provided when AI performs a swap
   }
   xpAwarded: number
+  newBadges?: string[]  // Optional: newly earned badge IDs
 }
 
 export interface VisualizerState {

@@ -12,6 +12,7 @@ load_dotenv()
 
 # Import routers
 from api.v1.chat import router as chat_router
+from api.v1.evaluate_quiz import router as quiz_router
 
 # Create FastAPI app
 app = FastAPI(
@@ -20,10 +21,10 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# CORS middleware
+# CORS middleware - Allow all origins for debugging
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001"],  # Add your production domain
+    allow_origins=["*"],  # Allow all origins for debugging
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -48,12 +49,13 @@ async def health():
 
 # Include API routes
 app.include_router(chat_router, prefix="/api/v1", tags=["Chat"])
+app.include_router(quiz_router, prefix="/api/v1", tags=["Quiz"])
 
 
 if __name__ == "__main__":
     import uvicorn
     
-    port = int(os.getenv("PORT", 8000))
+    port = int(os.getenv("PORT", 8001))
     uvicorn.run(
         "main:app",
         host="0.0.0.0",

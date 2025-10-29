@@ -32,6 +32,9 @@ model Profile {
   lastActive    DateTime @default(now())
   badges        String   @default("[]") // JSON string array
   mastery       String   @default("{}") // JSON string object
+  skillLevel    String?  // "basic" | "intermediate" | "advanced"
+  quizScore     Int?     // Score from onboarding quiz (0-5)
+  quizResults   String?  // JSON string with full quiz data
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }

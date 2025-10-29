@@ -31,10 +31,7 @@ export function SortVisualizer() {
           exit={{ opacity: 0 }}
           className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm"
         >
-          <div className="flex flex-col items-center gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Sort-crates is thinking...</p>
-          </div>
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </motion.div>
       )}
 

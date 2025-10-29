@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -9,14 +10,56 @@ import { useAppStore } from '@/store/useAppStore'
 import { useLearnerStore } from '@/store/useLearnerStore'
 import { ALGORITHMS, BADGES } from '@/lib/utils'
 import { cn } from '@/lib/utils'
-import { CheckCircle2, Lock, Trophy } from 'lucide-react'
+import { CheckCircle2, Trophy, Lock, LogOut, User, Settings } from 'lucide-react'
+import { auth } from '@/lib/firebase'
+import { signOut } from 'firebase/auth'
+import { getUserSkillLevel, isAlgorithmUnlocked } from '@/lib/firestore'
+import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
+
+const ALGORITHM_GRADIENTS: Record<string, string> = {
+  bubbleSort: 'from-blue-500 to-purple-500',
+  selectionSort: 'from-emerald-400 to-green-500',
+  insertionSort: 'from-orange-400 to-pink-500',
+  mergeSort: 'from-sky-400 to-blue-500',
+  quickSort: 'from-rose-500 to-red-500',
+  heapSort: 'from-amber-400 to-yellow-500',
+}
 
 export function Sidebar() {
+  const router = useRouter()
   const { currentAlgorithm, setCurrentAlgorithm, isSidebarOpen } = useAppStore()
   const { profile } = useLearnerStore()
+  const [skillLevel, setSkillLevel] = useState<'basic' | 'intermediate' | 'advanced'>('basic')
+  const [showAccountMenu, setShowAccountMenu] = useState(false)
 
   const mastery = profile?.mastery || {}
   const badges = profile?.badges || []
+  const user = auth.currentUser
+
+  useEffect(() => {
+    const loadSkillLevel = async () => {
+      const user = auth.currentUser
+      if (user) {
+        const userData = await getUserSkillLevel(user.uid)
+        if (userData?.skillLevel) {
+          setSkillLevel(userData.skillLevel)
+        }
+      }
+    }
+    loadSkillLevel()
+  }, [])
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth)
+      toast.success('Logged out successfully')
+      router.push('/')
+    } catch (error) {
+      console.error('Logout error:', error)
+      toast.error('Failed to log out')
+    }
+  }
 
   return (
     <AnimatePresence>
@@ -30,6 +73,42 @@ export function Sidebar() {
         >
           <ScrollArea className="h-full px-4 py-6">
             <div className="space-y-6">
+              {/* Account Section */}
+              <Card className="border-2">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
+                      {user?.displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate">
+                        {user?.displayName || 'User'}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {user?.email}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-muted-foreground">Skill Level</span>
+                    <Badge variant="outline" className="capitalize">
+                      {skillLevel}
+                    </Badge>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={handleLogout}
+                    >
+                      <LogOut className="h-4 w-4 mr-1" />
+                      Logout
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Algorithm Selection */}
               <div>
                 <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
@@ -39,7 +118,17 @@ export function Sidebar() {
                   {ALGORITHMS.map((algo) => {
                     const masteryLevel = mastery[algo.id] || 0
                     const isSelected = currentAlgorithm === algo.id
-                    const isUnlocked = algo.difficulty === 'beginner' || masteryLevel > 0
+                    const isUnlocked = isAlgorithmUnlocked(algo.id, skillLevel)
+
+                    const handleClick = () => {
+                      if (!isUnlocked) {
+                        toast.error('Algorithm Locked', {
+                          description: 'Achieve 100% mastery in any algorithm or improve your skill level to unlock this!',
+                        })
+                        return
+                      }
+                      setCurrentAlgorithm(algo.id as any)
+                    }
 
                     return (
                       <Button
@@ -49,21 +138,26 @@ export function Sidebar() {
                           'w-full justify-start gap-3 px-3 py-2 h-auto',
                           !isUnlocked && 'opacity-50 cursor-not-allowed'
                         )}
-                        onClick={() => isUnlocked && setCurrentAlgorithm(algo.id as any)}
+                        onClick={handleClick}
                         disabled={!isUnlocked}
                       >
                         <div className="flex-1 text-left">
                           <div className="flex items-center gap-2">
                             <span className="font-medium text-sm">{algo.name}</span>
-                            {masteryLevel >= 0.8 && (
+                            {!isUnlocked && (
+                              <Lock className="h-4 w-4 text-muted-foreground" />
+                            )}
+                            {isUnlocked && masteryLevel >= 0.8 && (
                               <CheckCircle2 className="h-4 w-4 text-green-500" />
                             )}
-                            {!isUnlocked && <Lock className="h-4 w-4" />}
                           </div>
                           <div className="mt-1 flex items-center gap-2">
                             <div className="h-1 w-full rounded-full bg-secondary">
                               <div
-                                className="h-1 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 transition-all"
+                                className={cn(
+                                  'h-1 rounded-full bg-gradient-to-r transition-all',
+                                  ALGORITHM_GRADIENTS[algo.id] || 'from-blue-500 to-purple-600'
+                                )}
                                 style={{ width: `${masteryLevel * 100}%` }}
                               />
                             </div>
@@ -94,7 +188,7 @@ export function Sidebar() {
                             className={cn(
                               'flex flex-col items-center gap-1 rounded-lg p-2 transition-all',
                               isEarned
-                                ? 'bg-gradient-to-br from-yellow-400/20 to-orange-400/20'
+                                ? 'bg-gradient-to-br from-yellow-400/30 to-orange-400/30 text-yellow-100 shadow-[0_0_18px_rgba(251,191,36,0.45)] ring-2 ring-yellow-400/40 animate-pulse'
                                 : 'opacity-30 grayscale'
                             )}
                           >

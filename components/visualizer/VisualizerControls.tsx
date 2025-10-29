@@ -1,6 +1,6 @@
 'use client'
 
-import { Play, Pause, RotateCcw, Shuffle } from 'lucide-react'
+import { Play, Pause, RotateCcw, Shuffle, Code2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
@@ -13,9 +13,10 @@ import {
 } from '@/components/ui/select'
 import { useAppStore } from '@/store/useAppStore'
 import { generateRandomArray } from '@/lib/utils'
-import { SortingAlgorithm } from '@/lib/types'
+import { useRouter } from 'next/navigation'
 
 export function VisualizerControls() {
+  const router = useRouter()
   const {
     isAnimating,
     setIsAnimating,
@@ -24,6 +25,7 @@ export function VisualizerControls() {
     visualizerState,
     setVisualizerState,
     resetVisualizerState,
+    currentAlgorithm,
   } = useAppStore()
 
   const handlePlayPause = () => {
@@ -43,6 +45,10 @@ export function VisualizerControls() {
       focusIndices: [],
       state: 'idle',
     })
+  }
+
+  const handleLeetCodeClick = () => {
+    router.push(`/practice/${currentAlgorithm}`)
   }
 
   const handleArraySizeChange = (value: string) => {
@@ -92,6 +98,16 @@ export function VisualizerControls() {
         <Button variant="outline" size="sm" onClick={handleShuffle}>
           <Shuffle className="mr-2 h-4 w-4" />
           Shuffle
+        </Button>
+
+        <Button 
+          variant="default"
+          size="sm" 
+          onClick={handleLeetCodeClick}
+          className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+        >
+          <Code2 className="mr-2 h-4 w-4" />
+          LeetCode Questions
         </Button>
       </div>
 

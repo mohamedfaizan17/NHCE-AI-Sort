@@ -73,42 +73,6 @@ export function Sidebar() {
         >
           <ScrollArea className="h-full px-4 py-6">
             <div className="space-y-6">
-              {/* Account Section */}
-              <Card className="border-2">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
-                      {user?.displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold truncate">
-                        {user?.displayName || 'User'}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {user?.email}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-muted-foreground">Skill Level</span>
-                    <Badge variant="outline" className="capitalize">
-                      {skillLevel}
-                    </Badge>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={handleLogout}
-                    >
-                      <LogOut className="h-4 w-4 mr-1" />
-                      Logout
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
               {/* Algorithm Selection */}
               <div>
                 <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">

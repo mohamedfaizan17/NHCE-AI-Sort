@@ -55,6 +55,11 @@ export function ChatPanel() {
     setMessages([getInitialMessage(currentAlgorithm)])
   }, [currentAlgorithm])
 
+  // Reset chat when user changes (login/logout) - fresh start each session
+  useEffect(() => {
+    setMessages([getInitialMessage(currentAlgorithm)])
+  }, [user?.firebaseUid])
+
   // Auto-scroll to bottom
   useEffect(() => {
     if (scrollRef.current) {
@@ -90,7 +95,15 @@ export function ChatPanel() {
 
     // Send to AI and get response
     try {
-      const response = await sendMessage(content)
+      // Prepare chat history (last 10 messages for context)
+      const chatHistory = [...messages, userMessage]
+        .slice(-10)
+        .map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }))
+      
+      const response = await sendMessage(content, chatHistory)
       
       // Add AI response to messages
       if (response) {

@@ -5,9 +5,9 @@ import { devChatHistoryByAlgo, devProfile } from '../devState'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { message, algorithm, firebaseUid, currentArray } = body
+    const { message, algorithm, firebaseUid, currentArray, chatHistory: clientChatHistory } = body
 
-    console.log('📨 Chat message received:', { message, algorithm, firebaseUid })
+    console.log('📨 Chat message received:', { message, algorithm, firebaseUid, chatHistoryLength: clientChatHistory?.length || 0 })
 
     if (!message || !algorithm || !firebaseUid) {
       return NextResponse.json(
@@ -31,7 +31,8 @@ export async function POST(request: NextRequest) {
       }
       
       user = { id: 'dev-user', profile: devProfile }
-      recentMessages = devChatHistoryByAlgo[algorithm].slice(-10)
+      // Use chat history from client (current session)
+      recentMessages = clientChatHistory || []
       mastery = devProfile.mastery
     } else {
       console.log('🔍 Looking up user in database...')
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
 
       console.log('✅ User found:', user.id)
 
-      // Save user message to database
+      // Save user message to database (for analytics/history, but not used for context)
       await prisma.chatMessage.create({
         data: {
           userId: user.id,
@@ -78,16 +79,9 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      // Get recent messages for context
-      recentMessages = await prisma.chatMessage.findMany({
-        where: { userId: user.id, algorithm },
-        orderBy: { timestamp: 'desc' },
-        take: 10,
-        select: {
-          role: true,
-          content: true,
-        },
-      })
+      // Use chat history from client (current session)
+      // Progress (XP, mastery, badges) is still preserved in the profile
+      recentMessages = clientChatHistory || []
 
       // Parse mastery
       mastery =
@@ -141,8 +135,9 @@ export async function POST(request: NextRequest) {
       // Save AI response and update profile
       if (isDev) {
         // Dev mode: Update in-memory state
-        devChatHistoryByAlgo[algorithm].push({ role: 'user', content: message })
-        devChatHistoryByAlgo[algorithm].push({ role: 'ai', content: aiResponse.socraticQuestion })
+        // Don't save to chat history - we want fresh sessions
+        // devChatHistoryByAlgo[algorithm].push({ role: 'user', content: message })
+        // devChatHistoryByAlgo[algorithm].push({ role: 'ai', content: aiResponse.socraticQuestion })
         
         // Track new badges per response
         devProfile.newBadges = []

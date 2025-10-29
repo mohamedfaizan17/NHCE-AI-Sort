@@ -1,6 +1,6 @@
 # Socratic Sort 🎓
 
-> An AI-first educational platform that teaches sorting algorithms through real-time Socratic dialogue and dynamic D3.js visualizations.
+> An AI-powered educational platform that teaches sorting algorithms through Socratic dialogue and interactive visualizations.
 
 ![Next.js](https://img.shields.io/badge/Next.js-15.0-black?style=flat-square&logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat-square&logo=typescript)
@@ -10,55 +10,45 @@
 
 ## 🌟 Overview
 
-Socratic Sort is a production-grade learning platform that revolutionizes how students understand sorting algorithms. Instead of passive tutorials, learners engage in a bidirectional conversation with "Sort-crates," an AI Socratic tutor powered by Google's Gemini, while watching synchronized D3.js animations that respond to their understanding in real-time.
+Socratic Sort revolutionizes algorithm education by combining AI-driven Socratic tutoring with real-time D3.js visualizations. Students learn through guided questioning rather than passive lectures, with the AI adapting to their understanding level and providing personalized feedback.
 
-### Core Experience
+## ✨ Key Features
 
-- **AI-Driven Dialogue**: Real-time Socratic questioning that adapts to your mastery level
-- **Synchronized Visualizations**: D3.js animations that respond to AI guidance
-- **Voice Interaction**: Full speech-to-text and text-to-speech with multiple mentor voices
-- **Gamification**: XP, badges, streaks, and leaderboards to maintain engagement
-- **Error Diagnosis**: Visual sandbox that replays your misconceptions
+### 🤖 AI-Powered Socratic Tutoring
+- **Google Gemini 2.5 Flash** integration for intelligent questioning
+- **Adaptive dialogue** that adjusts to student's mastery level
+- **Real-time feedback** with XP rewards for correct answers
+- **Fresh sessions** - chat history resets on login while preserving progress
 
-## ✨ Features
+### 🎨 Interactive Visualizations
+- **D3.js powered** bar chart animations
+- **Real-time updates** synchronized with AI guidance
+- **State highlighting** - comparing (yellow), swapping (purple), sorted (green)
+- **Responsive design** with smooth transitions
 
-### 🤖 AI-Powered Learning
-- **LangChain + Gemini 2.5**: Sophisticated Socratic tutoring with structured JSON responses
-- **Adaptive Questioning**: AI analyzes your mastery and adjusts difficulty
-- **Contextual Hints**: Three-tier hint system (subtle → explicit)
-- **Error Analysis**: AI diagnoses misconceptions and provides targeted challenges
-
-### 🎨 Premium UI/UX
-- **Modern Aesthetic**: Inspired by Linear, Vercel, and modern IDEs
-- **Responsive Layout**: 
-  - Desktop: Three-column (Navigation | Visualizer | Chat)
-  - Mobile: Tabbed interface with smooth transitions
-- **Dark/Light Mode**: Theme-aware visualizations and UI
-- **Fluid Animations**: Framer Motion for UI, D3.js transitions for data
-
-### 📊 Interactive Visualizations
-- **D3.js Powered**: Real-time SVG/Canvas rendering
-- **State Synchronization**: Visualizer responds to AI's guidance
-- **Smooth Transitions**: Cubic easing for all animations
-- **Focus Highlighting**: Dynamic color changes for algorithm steps
+### 📚 Practice Problems
+- **LeetCode Questions** button unlocks curated coding problems
+- **Multi-platform links** - LeetCode, GeeksforGeeks, HackerRank
+- **Difficulty ratings** and problem descriptions
+- **Algorithm-specific** problem sets for each sorting technique
 
 ### 🎮 Gamification System
-- **XP & Leveling**: Earn points for correct answers and insights
-- **Badge System**: Unlock achievements for mastery milestones
-- **Streak Tracking**: Daily engagement rewards
-- **Global Leaderboard**: Compete with learners worldwide
-- **Progress Analytics**: Track mastery across all algorithms
+- **XP & Leveling** - earn points for correct answers
+- **Badge System** - unlock achievements at XP milestones
+- **Streak Tracking** - daily engagement rewards
+- **Global Leaderboard** - compete with other learners
+- **Progress Analytics** - track mastery per algorithm
+
+### 👤 User Management
+- **Firebase Authentication** - secure login/signup
+- **Account Details Page** - manage profile and view stats
+- **Avatar Dropdown Menu** - quick access to account and logout
+- **Profile Customization** - update display name
 
 ### 🎙️ Voice Features
-- **Speech-to-Text**: Hands-free interaction via Web Speech API
-- **Text-to-Speech**: Multiple mentor voices via Gemini TTS
-- **Audio Playback**: PCM to WAV conversion with mute controls
-- **Voice Selection**: Choose your preferred mentor personality
-
-### 🔍 Error Diagnosis Mode
-- **Visual Debugging**: Mini-visualizer replays your incorrect logic
-- **Red Highlighting**: Shows where your reasoning fails
-- **Test Case Generation**: AI creates edge cases that break your understanding
+- **Text-to-Speech** - AI responses read aloud
+- **Multiple Voices** - choose your preferred mentor
+- **Mute Controls** - toggle audio on/off
 
 ## 🛠️ Tech Stack
 
@@ -68,95 +58,71 @@ Socratic Sort is a production-grade learning platform that revolutionizes how st
 - **Styling**: Tailwind CSS + shadcn/ui
 - **State Management**: Zustand
 - **Animations**: Framer Motion + D3.js
-- **Icons**: Lucide React
 - **Authentication**: Firebase Auth
+- **Database**: Prisma + SQLite
 
 ### Backend
-- **API Layer**: Next.js API Routes (Data Orchestration)
+- **API Layer**: Next.js API Routes
 - **AI Backend**: Python FastAPI
-- **Database**: SQLite (via Prisma ORM)
-- **AI Framework**: LangChain
-- **AI Model**: Google Gemini 2.5 Flash Preview
-
-### Infrastructure
-- **ORM**: Prisma
-- **Auth**: Firebase
-- **TTS/STT**: Gemini TTS API + Web Speech API
+- **AI Model**: Google Gemini 2.5 Flash
+- **Framework**: LangChain
 
 ## 📁 Project Structure
 
 ```
 socratic-sort/
 ├── app/
-│   ├── layout.tsx                 # Root layout with providers
-│   ├── page.tsx                   # Main app page
-│   └── api/                       # Next.js API routes
-│       ├── user/
-│       │   └── profile/route.ts   # User profile CRUD
-│       ├── chat/
-│       │   ├── history/route.ts   # Chat history retrieval
-│       │   └── send/route.ts      # Main orchestration endpoint
-│       └── leaderboard/route.ts   # Global leaderboard
+│   ├── page.tsx                   # Main learning interface
+│   ├── account/page.tsx           # User profile & stats
+│   ├── practice/[algorithm]/      # LeetCode questions page
+│   └── api/
+│       ├── chat/send/route.ts     # Chat orchestration
+│       └── user/profile/route.ts  # User data management
 │
 ├── components/
 │   ├── layout/
-│   │   ├── Header.tsx             # Logo, avatar, XP, theme toggle
-│   │   ├── Sidebar.tsx            # Algorithm selection, badges
-│   │   └── MainLayout.tsx         # 3-panel responsive layout
+│   │   ├── Header.tsx             # Top bar with avatar dropdown
+│   │   └── Sidebar.tsx            # Algorithm selection
 │   ├── visualizer/
-│   │   ├── SortVisualizer.tsx     # D3.js canvas wrapper
-│   │   ├── VisualizerControls.tsx # Speed, start/pause/reset
-│   │   └── SandboxVisualizer.tsx  # Error diagnosis mini-viz
-│   ├── chat/
-│   │   ├── ChatPanel.tsx          # Complete chat interface
-│   │   ├── ChatMessage.tsx        # Styled messages (user/ai/system)
-│   │   └── ChatInput.tsx          # Input with voice controls
-│   └── gamification/
-│       ├── UserProfileCard.tsx    # Avatar, XP, streak, badges
-│       └── Leaderboard.tsx        # Top 10 users
+│   │   ├── SortVisualizer.tsx     # D3.js visualization
+│   │   └── VisualizerControls.tsx # Controls + LeetCode button
+│   └── chat/
+│       ├── ChatPanel.tsx          # Chat interface
+│       ├── ChatMessage.tsx        # Message display
+│       └── ChatInput.tsx          # Input with voice
 │
 ├── hooks/
-│   ├── useD3Sort.ts               # Core D3.js visualization logic
-│   ├── useSpeech.ts               # STT + TTS integration
-│   └── useSocraticTutor.ts        # AI dialogue orchestration
-│
-├── store/
-│   ├── useAppStore.ts             # Global app state (Zustand)
-│   └── useLearnerStore.ts         # User progress state (Zustand)
-│
-├── context/
-│   └── ThemeProvider.tsx          # Light/dark mode provider
+│   ├── useD3Sort.ts               # D3.js visualization logic
+│   ├── useSpeech.ts               # TTS integration
+│   └── useSocraticTutor.ts        # AI dialogue handler
 │
 ├── lib/
-│   ├── firebase.ts                # Firebase Auth setup
-│   ├── prisma.ts                  # Prisma client
-│   └── utils.ts                   # Helper functions (pcmToWav)
+│   ├── leetcode-questions.ts     # Curated problem database
+│   ├── firebase.ts               # Auth configuration
+│   └── utils.ts                  # Helper functions
 │
-├── prisma/
-│   ├── schema.prisma              # Database schema
-│   └── dev.db                     # SQLite database file
+├── backend/                      # Python AI backend
+│   ├── main.py                   # FastAPI server
+│   ├── core/
+│   │   ├── tutor.py              # Gemini integration
+│   │   └── prompts.py            # Socratic prompts
+│   └── api/v1/chat.py            # Chat endpoint
 │
-└── backend/                       # Python AI backend
-    ├── main.py                    # FastAPI server
-    ├── requirements.txt           # Python dependencies
-    ├── core/
-    │   ├── tutor.py               # LangChain logic
-    │   └── prompts.py             # Socratic prompt templates
-    └── api/
-        └── v1/
-            └── chat.py            # /api/v1/chat endpoint
+└── prisma/
+    ├── schema.prisma             # Database schema
+    └── dev.db                    # SQLite database
 ```
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-- **Node.js** 18+ and npm/yarn/pnpm
-- **Python** 3.11+
-- **Firebase Project** (for authentication)
-- **Google AI Studio API Key** (for Gemini)
+- Node.js 18+
+- Python 3.11+
+- Firebase Project
+- Google AI Studio API Key (Gemini)
 
-### 1. Clone the Repository
+### 1. Clone Repository
 
 ```bash
 git clone https://github.com/yourusername/socratic-sort.git
@@ -174,14 +140,11 @@ npx prisma generate
 
 # Initialize database
 npx prisma db push
-
-# Seed database (optional)
-npx prisma db seed
 ```
 
 ### 3. Environment Variables
 
-Create a `.env.local` file in the root directory:
+Create `.env.local` in root:
 
 ```env
 # Firebase Configuration
@@ -202,254 +165,143 @@ PYTHON_BACKEND_URL=http://localhost:8000
 GOOGLE_AI_API_KEY=your_gemini_api_key
 ```
 
-### 4. Python Backend Setup
+Create `backend/.env`:
+
+```env
+GOOGLE_AI_API_KEY=your_gemini_api_key
+```
+
+### 4. Backend Setup
 
 ```bash
 cd backend
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
 # Install dependencies
 pip install -r requirements.txt
-
-# Create .env file
-echo "GOOGLE_AI_API_KEY=your_gemini_api_key" > .env
 ```
 
-### 5. Run the Application
+### 5. Run Application
 
 **Terminal 1 - Frontend:**
 ```bash
 npm run dev
 ```
 
-**Terminal 2 - Python Backend:**
+**Terminal 2 - Backend:**
 ```bash
 cd backend
-uvicorn main:app --reload --port 8000
+python -m uvicorn main:app --reload --port 8000
 ```
 
-Visit `http://localhost:3000` to see the app.
+Visit `http://localhost:3000`
 
-## 🏗️ Architecture
+## 🎯 How It Works
 
-### Data Flow
+### Learning Flow
 
-```
-┌─────────────┐
-│   Client    │
-│  (Next.js)  │
-└──────┬──────┘
-       │ 1. User sends message
-       ▼
-┌─────────────────────────────┐
-│ Next.js API Route           │
-│ /api/chat/send              │
-│                             │
-│ • Gets Firebase uid         │
-│ • Fetches chat history (DB) │
-│ • Fetches mastery (DB)      │
-└──────┬──────────────────────┘
-       │ 2. Orchestration
-       ▼
-┌─────────────────────────────┐
-│ Python FastAPI Backend      │
-│ /api/v1/chat                │
-│                             │
-│ • LangChain + Gemini        │
-│ • Generates Socratic Q      │
-│ • Updates mastery           │
-│ • Returns structured JSON   │
-└──────┬──────────────────────┘
-       │ 3. AI Response
-       ▼
-┌─────────────────────────────┐
-│ Next.js API Route           │
-│ /api/chat/send              │
-│                             │
-│ • Saves chat to DB          │
-│ • Updates mastery in DB     │
-│ • Awards XP                 │
-└──────┬──────────────────────┘
-       │ 4. Returns to client
-       ▼
-┌─────────────┐
-│   Client    │
-│  • Updates UI               │
-│  • Animates visualizer      │
-│  • Plays TTS audio          │
-└─────────────┘
-```
+1. **Login** - Authenticate with Firebase
+2. **Select Algorithm** - Choose from 6 sorting algorithms in sidebar
+3. **Chat with AI** - Answer Socratic questions about the algorithm
+4. **Watch Visualization** - See array elements highlighted and swapped in real-time
+5. **Earn XP** - Get points for correct answers (+5 XP)
+6. **Unlock Badges** - Reach XP milestones (100, 200, 400, 600, 800, 1000, 1500, 2000)
+7. **Practice Problems** - Click "LeetCode Questions" to solve real coding challenges
 
-### Database Schema (Prisma)
+### AI Conversation System
 
-```prisma
-model User {
-  id            String        @id @default(uuid())
-  firebaseUid   String        @unique
-  email         String        @unique
-  displayName   String?
-  photoURL      String?
-  createdAt     DateTime      @default(now())
-  profile       Profile?
-  chatHistory   ChatMessage[]
-}
+- **Fresh Start**: Chat history resets on each login
+- **Progress Preserved**: XP, mastery, and badges persist across sessions
+- **Context Aware**: AI receives last 10 messages for context within session
+- **Adaptive**: Questions adjust based on your mastery level (0-100%)
 
-model Profile {
-  id            String   @id @default(uuid())
-  userId        String   @unique
-  user          User     @relation(fields: [userId], references: [id])
-  xp            Int      @default(0)
-  level         Int      @default(1)
-  streak        Int      @default(0)
-  lastActive    DateTime @default(now())
-  badges        Json     @default("[]")
-  mastery       Json     @default("{}")
-}
+### Visualization States
 
-model ChatMessage {
-  id            String   @id @default(uuid())
-  userId        String
-  user          User     @relation(fields: [userId], references: [id])
-  algorithm     String
-  role          String   // "user" | "ai" | "system"
-  content       String
-  timestamp     DateTime @default(now())
-}
-```
+- **Idle** (Blue): Default state
+- **Comparing** (Yellow): AI asking about comparison
+- **Swapping** (Purple): Elements being swapped
+- **Sorted** (Green): Algorithm complete
 
-## 🧩 Key Components
+### XP & Badges System
 
-### AI Response Structure
+| XP Milestone | Badge |
+|--------------|-------|
+| 100 XP | 🎯 First Steps |
+| 200 XP | 🥉 Bronze Achiever |
+| 400 XP | 🥈 Silver Champion |
+| 600 XP | 🥇 Gold Legend |
+| 800 XP | 🫧 Bubble Master |
+| 1000 XP | ⚡ Quick Sorter |
+| 1500 XP | 🔥 Week Warrior |
+| 2000 XP | ⭐ Rising Star |
 
-The Python backend returns structured JSON:
+## 📊 Supported Algorithms
 
-```typescript
-interface AIResponse {
-  socraticQuestion: string;
-  analysisOfUserAnswer: string;
-  learnerMasteryUpdate: {
-    bubbleSort?: number;
-    quickSort?: number;
-    // ... other algorithms
-  };
-  visualizerStateUpdate: {
-    focusIndices: number[];
-    state: "idle" | "comparing" | "swapping" | "sorted";
-  };
-  xpAwarded: number;
-}
-```
+1. **Bubble Sort** - Compare adjacent elements
+2. **Selection Sort** - Find minimum and swap
+3. **Insertion Sort** - Build sorted array one element at a time
+4. **Merge Sort** - Divide and conquer approach
+5. **Quick Sort** - Partition-based sorting
+6. **Heap Sort** - Binary heap data structure
 
-### Zustand Stores
+Each algorithm has:
+- Dedicated Socratic dialogue flow
+- Custom visualization colors
+- Curated LeetCode problems
+- Mastery tracking (0-100%)
 
-**useAppStore**:
-- Current algorithm selection
-- Animation speed
-- Mute state
-- Loading states
+## 🔐 Security
 
-**useLearnerStore**:
-- User profile (XP, level, streak)
-- Mastery scores per algorithm
-- Badges
-- Hydrates from `/api/user/profile`
+- Firebase Auth tokens verified server-side
+- API keys in environment variables
+- User data scoped by Firebase UID
+- CORS configured for frontend domain only
 
-### D3.js Visualization
+## 🎨 UI Features
 
-The `useD3Sort` hook:
-1. Creates an SVG canvas
-2. Binds data to `<rect>` elements
-3. Responds to `visualizerStateUpdate` from AI
-4. Animates swaps, comparisons, and sorts
-5. Updates colors based on state
-
-## 🎨 Styling Guidelines
-
-- **shadcn/ui** components for all UI elements
-- **Tailwind CSS** for custom styling
-- **Framer Motion** for page transitions and UI animations
-- **D3.js transitions** for data visualizations
-- **Theme-aware colors**: Use CSS variables that adapt to dark/light mode
-
-## 🧪 Testing
-
-```bash
-# Run frontend tests
-npm run test
-
-# Run backend tests
-cd backend
-pytest
-```
+- **Dark/Light Mode** - Theme toggle in header
+- **Responsive Design** - Works on desktop and mobile
+- **Smooth Animations** - Framer Motion transitions
+- **Modern Components** - shadcn/ui library
+- **Dropdown Menu** - Avatar menu with Account Details & Logout
 
 ## 📦 Deployment
 
 ### Frontend (Vercel)
-
 ```bash
-# Build the app
 npm run build
-
-# Deploy to Vercel
 vercel --prod
 ```
 
 ### Backend (Railway/Render)
-
-```bash
-cd backend
-# Deploy using Railway CLI or Render dashboard
-```
+Deploy Python FastAPI backend using Railway or Render dashboard.
 
 ### Database
-
-For production, consider migrating from SQLite to:
-- **PostgreSQL** (recommended for Vercel/Railway)
-- **PlanetScale** (MySQL-compatible)
-
-Update `DATABASE_URL` in `.env` and run:
+For production, migrate to PostgreSQL:
 ```bash
+# Update DATABASE_URL in .env
 npx prisma db push
 ```
-
-## 🔐 Security Considerations
-
-- Firebase Auth tokens are verified on the server
-- API keys are stored in environment variables
-- CORS is configured to allow only your frontend domain
-- Rate limiting on AI endpoints to prevent abuse
-- User data is scoped by Firebase UID
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create feature branch (`git checkout -b feature/name`)
+3. Commit changes (`git commit -m 'Add feature'`)
+4. Push to branch (`git push origin feature/name`)
+5. Open Pull Request
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+MIT License - see LICENSE file for details
 
 ## 🙏 Acknowledgments
 
-- **Google Gemini** for the powerful AI model
-- **LangChain** for the elegant AI orchestration framework
-- **shadcn/ui** for the beautiful component library
-- **D3.js** for the incredible visualization capabilities
-- **Vercel** for the amazing Next.js framework
-
-## 📞 Support
-
-For questions or issues:
-- Open an issue on GitHub
-- Email: support@socraticsort.com
-- Discord: [Join our community](https://discord.gg/socraticsort)
+- Google Gemini for AI capabilities
+- LangChain for AI orchestration
+- shadcn/ui for component library
+- D3.js for visualizations
+- Vercel for Next.js framework
 
 ---
 
-**Built with ❤️ by developers who believe learning should be a conversation, not a lecture.**
+**Built with ❤️ for students who learn best through conversation**

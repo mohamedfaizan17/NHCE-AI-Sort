@@ -19,11 +19,11 @@ class SocraticTutor:
         print(f"GOOGLE_AI_API_KEY loaded: {bool(api_key)}", flush=True)
         print(f"API key length: {len(api_key) if api_key else 0}", flush=True)
         
-        # Use Gemini 2.0 Flash Exp - Optimized for speed
-        print("Initializing Google Gemini 2.0 Flash Exp...", flush=True)
+        # Use Gemini 1.5 Flash - Higher free tier quota (1500 RPD)
+        print("Initializing Google Gemini 1.5 Flash...", flush=True)
         genai.configure(api_key=api_key)
-        self.llm = genai.GenerativeModel('gemini-2.0-flash-exp')
-        print("Google Gemini 2.0 Flash Exp initialized successfully", flush=True)
+        self.llm = genai.GenerativeModel('gemini-2.5-flash')
+        print("Google Gemini 1.5 Flash initialized successfully", flush=True)
     
     def generate_response(
         self,
@@ -118,6 +118,19 @@ class SocraticTutor:
             # Award XP strictly: 5 for correct responses, otherwise 0
             xp_awarded = 5 if analysis == "correct" else 0
 
+            # Get visualizer state update
+            visualizer_update = parsed_response.get(
+                "visualizerStateUpdate",
+                {"focusIndices": [], "state": "idle"}
+            )
+            
+            # Log the visualizer update for debugging
+            print(f"📊 Visualizer update from AI: {visualizer_update}", flush=True)
+            if "data" in visualizer_update:
+                print(f"✅ AI provided new array data: {visualizer_update['data']}", flush=True)
+            else:
+                print(f"⚠️ No array data in visualizer update", flush=True)
+
             result = {
                 "socraticQuestion": parsed_response.get(
                     "socraticQuestion",
@@ -127,13 +140,11 @@ class SocraticTutor:
                 "learnerMasteryUpdate": parsed_response.get(
                     "learnerMasteryUpdate", {algorithm: current_mastery}
                 ),
-                "visualizerStateUpdate": parsed_response.get(
-                    "visualizerStateUpdate",
-                    {"focusIndices": [], "state": "idle"}
-                ),
+                "visualizerStateUpdate": visualizer_update,
                 "xpAwarded": xp_awarded,
             }
             
+            print(f"🎯 Final result being returned: {result}", flush=True)
             return result
             
         except json.JSONDecodeError as e:

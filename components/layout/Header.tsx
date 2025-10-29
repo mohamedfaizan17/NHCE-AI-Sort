@@ -1,6 +1,6 @@
 'use client'
 
-import { Moon, Sun, Volume2, VolumeX, Menu, Zap } from 'lucide-react'
+import { Moon, Sun, Volume2, VolumeX, Menu, Zap, User, LogOut } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -18,17 +18,45 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { useAppStore } from '@/store/useAppStore'
 import { useLearnerStore } from '@/store/useLearnerStore'
 import { VOICE_OPTIONS } from '@/lib/types'
 import { getProgressToNextLevel } from '@/lib/utils'
+import { auth } from '@/lib/firebase'
+import { signOut } from 'firebase/auth'
+import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
 
 export function Header() {
+  const router = useRouter()
   const { theme, setTheme } = useTheme()
   const { isMuted, toggleMute, selectedVoice, setSelectedVoice, toggleSidebar } = useAppStore()
   const { user, profile } = useLearnerStore()
 
   const progressToNextLevel = profile ? getProgressToNextLevel(profile.xp) : 0
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth)
+      toast.success('Logged out successfully')
+      router.push('/')
+    } catch (error) {
+      console.error('Logout error:', error)
+      toast.error('Failed to log out')
+    }
+  }
+
+  const handleAccountDetails = () => {
+    router.push('/account')
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -147,14 +175,37 @@ export function Header() {
             </Tooltip>
           </TooltipProvider>
 
-          {/* User Avatar */}
+          {/* User Avatar with Dropdown */}
           {user && (
-            <Avatar className="h-9 w-9 cursor-pointer">
-              <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User'} />
-              <AvatarFallback>
-                {user.displayName?.charAt(0)?.toUpperCase() || 'U'}
-              </AvatarFallback>
-            </Avatar>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
+                  <Avatar className="h-9 w-9">
+                    <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User'} />
+                    <AvatarFallback>
+                      {user.displayName?.charAt(0)?.toUpperCase() || 'M'}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{user.displayName || 'User'}</p>
+                    <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleAccountDetails} className="cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Account Details</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
       </div>

@@ -5,7 +5,7 @@ import { AIResponse, ChatMessage } from '@/lib/types'
 import { toast } from 'sonner'
 
 interface UseSocraticTutorReturn {
-  sendMessage: (message: string) => Promise<AIResponse | null>
+  sendMessage: (message: string, chatHistory?: Array<{role: string, content: string}>) => Promise<AIResponse | null>
   getHint: () => string
   isLoading: boolean
   error: string | null
@@ -44,7 +44,7 @@ export function useSocraticTutor(): UseSocraticTutorReturn {
   const { user, profile, refreshProfile } = useLearnerStore()
 
   const sendMessage = useCallback(
-    async (message: string): Promise<AIResponse | null> => {
+    async (message: string, chatHistory: Array<{role: string, content: string}> = []): Promise<AIResponse | null> => {
       if (!user) {
         setError('User not authenticated')
         toast.error('Please log in to continue')
@@ -73,6 +73,7 @@ export function useSocraticTutor(): UseSocraticTutorReturn {
             firebaseUid: user.firebaseUid,
             currentArray: visualizerState.data,
             isAnimating: isAnimating,
+            chatHistory: chatHistory,
           }),
         })
 
@@ -83,22 +84,23 @@ export function useSocraticTutor(): UseSocraticTutorReturn {
         const data: AIResponse = await response.json()
 
         // Update visualizer state based on AI response
-        // Only update if not currently animating to avoid interrupting the animation
-        if (data.visualizerStateUpdate && !isAnimating) {
-          // If AI provided new data (after a swap), update it
-          if (data.visualizerStateUpdate.data) {
-            setVisualizerState({
-              data: data.visualizerStateUpdate.data,
-              focusIndices: data.visualizerStateUpdate.focusIndices || [],
-              state: data.visualizerStateUpdate.state || 'idle',
-            })
-          } else {
-            // Otherwise just update focus and state without changing data
-            setVisualizerState({
-              focusIndices: data.visualizerStateUpdate.focusIndices || [],
-              state: data.visualizerStateUpdate.state || 'idle',
-            })
+        if (data.visualizerStateUpdate) {
+          console.log('🎨 Updating visualizer state:', data.visualizerStateUpdate)
+          
+          // Build the update object
+          const update: any = {
+            focusIndices: data.visualizerStateUpdate.focusIndices || [],
+            state: data.visualizerStateUpdate.state || 'idle',
           }
+          
+          // If AI provided new data (after a swap), update it
+          if (data.visualizerStateUpdate.data && Array.isArray(data.visualizerStateUpdate.data)) {
+            console.log('📊 Updating array data:', data.visualizerStateUpdate.data)
+            update.data = data.visualizerStateUpdate.data
+          }
+          
+          // Apply the update
+          setVisualizerState(update)
         }
 
         // Refresh user profile to get updated XP and mastery
